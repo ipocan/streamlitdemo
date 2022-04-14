@@ -2,15 +2,9 @@ import numpy as np
 import pickle
 import pandas as pd
 import streamlit as st 
-import sys
-import os
-from PIL import Image
-sys.modules['Image'] = Image 
-import tensorflow as tf
-from tensorflow.keras.preprocessing import image
+
 
 from dropdict import *
-from helperfunctions import *
 
 
 # # regression model
@@ -21,81 +15,11 @@ prediction_model=pickle.load(file)
 # file = open("rf_regressor_vehicle_value_predictor.pkl","rb")
 # prediction_model=pickle.load(file)
 
-# exterior classifier model
-exterior_model = tf.keras.models.load_model('./packaged_exterior_classifier/saved_model_ext_class')
 
-# color classifier model
-color_model = tf.keras.models.load_model('./packaged_color_classifier/saved_model_color_class_01')
-
-# body type classifier model
-bodytype_model = tf.keras.models.load_model('./packaged_body_classifier/saved_model_body_class_01')
-
-# car make classifier model
-car_make_clf = tf.keras.models.load_model('./packaged_make_classifier/saved_model_make_class_02')
 
 
 # lookup table
 lookup = pd.read_csv("vin_lookup_year.csv")
-
-def exterior_classification(img_path):
-    img = image.load_img(img_path, target_size=(180, 180))
-    img_array = image.img_to_array(img)
-    img_preprocessed = np.expand_dims(img_array, axis=0)
-
-    predictions = exterior_model(img_preprocessed)
-
-    label = np.argmax(predictions, axis=1)[0]
-    decoder = {0: 'Acceptable_image', 1: 'Not_acceptable_image'}
-    decoded_label = decoder[label]
-    return decoded_label
-
-
-
-def color_classification(img_path):
-
-    img = image.load_img(img_path, target_size=(180, 180))
-    img_array = image.img_to_array(img)
-    img_preprocessed = np.expand_dims(img_array, axis=0)
-
-    predictions = color_model(img_preprocessed)
-
-    label = np.argmax(predictions, axis=1)[0]
-    decoder = {0:'Beige', 1:'Black', 2:'Blue', 3:'Brown', 4:'Gold', 5:'Gray', 6:'Green', 7:'Orange', 8:'Pink', 9:'Purple', 10:'Red', 11:'Silver', 12:'White', 13:'Yellow'}
-    decoded_label = decoder[label]
-    return decoded_label
-
-
-def body_classification(img_path):
-
-    img = image.load_img(img_path, target_size=(180, 180))
-    img_array = image.img_to_array(img)
-    img_preprocessed = np.expand_dims(img_array, axis=0)
-
-    predictions = bodytype_model(img_preprocessed)
-
-    label = np.argmax(predictions, axis=1)[0]
-    decoder = {0:'Cargo Van', 1:'Convertible', 2:'Coupe', 3:'Crossover', 4:'Hatchback', 5:'Minivan', 26:'Pickup', 7:'Roadster', 8:'SUV', 9:'Sedan', 10:'Wagon'}
-    decoded_label = decoder[label]
-    return decoded_label
-
-
-def make_classification(img_path):
-
-    img = image.load_img(img_path, target_size=(220, 220))
-    img_array = image.img_to_array(img)
-    img_preprocessed = np.expand_dims(img_array, axis=0)
-
-    predictions = car_make_clf(img_preprocessed)
-
-    label = np.argmax(predictions, axis=1)[0]
-    decoder = {0: 'Acura', 1: 'Alfa Romeo', 2: 'Aston Martin', 3: 'Audi',4: 'BMW', 5: 'Bentley', 6: 'Buick', 7: 'Cadillac', 8: 'Chevrolet',9: 'Chrysler', 10: 'Dodge', 11: 'FIAT', 12: 'Ferrari', 13: 'Ford',
-               14: 'GENESIS', 15: 'GMC', 16: 'Honda', 17: 'Hummer', 18: 'Hyundai',19: 'INFINITI', 20: 'Isuzu', 21: 'Jaguar', 22: 'Jeep', 23: 'KARMA',24: 'Kia', 25: 'Lamborghini', 26: 'Land Rover', 27: 'Lexus', 28: 'Lincoln',
-               29: 'Lotus', 30: 'MINI', 31: 'Maserati', 32: 'Maybach', 33: 'Mazda',34: 'McLaren', 35: 'Mercedes-Benz', 36: 'Mercury', 37: 'Mitsubishi',
-               38: 'Nissan', 39: 'Oldsmobile', 40: 'Plymouth', 41: 'Pontiac',42: 'Porsche', 43: 'RAM', 44: 'Rolls-Royce', 45: 'Saab',
-               46: 'Saturn', 47: 'Scion', 48: 'Subaru', 49: 'Suzuki', 50: 'Toyota',51: 'Volkswagen', 52: 'Volvo', 53: 'smart'}
-    decoded_label = decoder[label]
-    return decoded_label
-
 
 ## Regression model price prediction function
 def car_price_predictor(make, model, trim, vehicle_type, body_type, drivetrain,fuel_type, engine_block, transmission, base_exterior_color, base_interior_color, state, miles, year, engine_size,
@@ -129,28 +53,7 @@ def main():
     #st.markdown("<h1 style='text-align: center; color: red;'>AUTOMATES</h1>", unsafe_allow_html=True)
     col1,col2 = st.columns(2)
     with col1:
-        uploaded_file = st.file_uploader("Please upload an exterior image of your car")
 
-            # text over upload button "Upload Image"
-        if uploaded_file is not None:
-
-            with open(uploaded_file.name,"wb") as f:
-                f.write(uploaded_file.getbuffer())
-
-            message = exterior_classification(uploaded_file.name)
-            color_msg = color_classification(uploaded_file.name)
-            make_msg = make_classification(uploaded_file.name)
-            body_msg = body_classification(uploaded_file.name)
-            # deleting uploaded saved picture after prediction
-            os.remove(uploaded_file.name)
-            # display message
-            st.text(message)
-            st.text(make_msg)
-            st.text(body_msg)
-            st.text(color_msg)
-
-            if message is 'Not_acceptable_image':
-                uploaded_file = st.text("Upload an exterior image of your car")
 
         make = st.selectbox("Make",car_make)
 
